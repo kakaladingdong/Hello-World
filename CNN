@@ -1,0 +1,84 @@
+import tensorflow as tf
+import numpy as np
+
+from tensorflow.examples.tutorials.mnist import input_data
+mnist=input_data.read_data_sets('MNIST/',one_hot=True)
+
+def weight_variable(shape):
+    initial=tf.truncated_normal(shape,stddev=0.1)
+    return tf.Variable(initial)
+
+def biases_variable(shape):
+    initial=tf.constant(0.1,shape=shape)
+    return tf.Variable(initial)
+
+def con2vd(x,W):
+    return tf.nn.conv2d(x,W,strides=[1,1,1,1],padding='SAME')
+
+def max_poo_2x2(x):
+    return tf.nn.max_pool(x,ksize=[1,2,2,1],strides=[1,2,2,1],padding='SAME')
+
+xs=tf.placeholder(tf.float32,[None,784])/255
+ys=tf.placeholder(tf.int32,[None,10])
+keep_prob=tf.placeholder(tf.float32)
+
+x_image=tf.reshape(xs,[-1,28,28,1])
+
+test_x=mnist.test.images[:3000]
+test_y=mnist.test.labels[:3000]
+
+
+#第一层卷积
+conv1=tf.layers.conv2d(
+    inputs=x_image,
+    filters=32,
+    kernel_size=[5,5],
+    strides=1,
+    padding='same',
+    activation=tf.nn.relu
+)
+pool1=tf.layers.average_pooling2d(
+    inputs=conv1,
+    pool_size=[2,2],
+    strides=2
+)
+
+#第二层卷积
+conv2=tf.layers.conv2d(
+    inputs=pool1,
+    filters=64,
+    kernel_size=[5,5],
+    strides=1,
+    padding='same',
+    activation=tf.nn.relu
+)
+pool2=tf.layers.average_pooling2d(
+    inputs=conv2,
+    pool_size=[2,2],
+    strides=2
+)
+
+#fully_connecte
+flat=tf.reshape(pool2,[-1,7*7*64])
+dropout=tf.nn.dropout(flat,keep_prob)
+#全连接层
+logits=tf.layers.dense(inputs=dropout,units=10)
+
+loss=tf.losses.softmax_cross_entropy(onehot_labels=ys,logits=logits)
+train_op=tf.train.GradientDescentOptimizer(0.1).minimize(loss)
+#tf.train.AdamOptimizer(0.001).minimize(loss)
+
+output_test=tf.equal(tf.argmax(logits,1),tf.argmax(ys,1))
+accuracy=tf.reduce_mean(tf.cast(output_test,'float'))
+
+
+init=tf.global_variables_initializer()
+
+with tf.Session() as sess:
+    sess.run(init)
+    for i in range(20000):
+        batch = mnist.train.next_batch(50)
+        sess.run(train_op, feed_dict={xs: batch[0], ys: batch[1],keep_prob:0.9})
+        if i % 1000 == 0:
+            test_accuracy = sess.run(accuracy, {xs: test_x, ys: test_y,keep_prob:0.9})
+            print('accuracy:',sess.run(accuracy,feed_dict={xs:test_x,ys:test_y,keep_prob:0.9}))
