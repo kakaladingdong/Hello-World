@@ -1,5 +1,9 @@
+#一个简单的分类器
+#对mnist库的手写字进行分类
+
 import tensorflow as tf
 import numpy as np
+
 #从mnist库导入数据
 from tensorflow.examples.tutorials.mnist import input_data
 mnist=input_data.read_data_sets('MNIST_data/',one_hot=True)
@@ -13,6 +17,7 @@ def add_layer(inputs,insize,outsize,activation_function=None):
     else:
         outputs=activation_function(Wx_plus_b)
     return outputs
+    
 #图片为28*28
 #搭建网络
 xs=tf.placeholder(tf.float32,[None,784])
@@ -20,6 +25,7 @@ ys=tf.placeholder(tf.float32,[None,10])
 
 # 训练
 output=add_layer(xs,784,10,tf.nn.softmax)
+
 #loss计算选用交差熵函数
 loss=tf.reduce_mean(-tf.reduce_sum(ys*tf.log(output),reduction_indices=[1]))
 trian_step=tf.train.GradientDescentOptimizer(0.5).minimize(loss)
